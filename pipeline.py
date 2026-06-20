@@ -66,22 +66,17 @@ class TrafficViolationPipeline:
     def classify_violations(self, img, detections):
         """
         Stub for violation classification logic.
-        In a real system, this would involve complex spatial analysis or secondary models.
+        In a real system, this requires secondary models (e.g., a YOLO model trained specifically on helmets).
         """
         violations = []
-        # Example Logic: If a person is detected near a motorcycle, check for helmet.
-        # This is a simplified mock.
-        for det in detections:
-            if det['class'] in ['car', 'motorcycle', 'truck', 'bus']:
-                # Mock a random violation for demonstration purposes
-                if np.random.rand() > 0.7: 
-                    violation_type = "Speeding" if det['class'] == 'car' else "No Helmet"
-                    violations.append({
-                        "vehicle_type": det['class'],
-                        "violation": violation_type,
-                        "confidence": round(np.random.uniform(0.6, 0.95), 2),
-                        "bbox": det['bbox']
-                    })
+        # NOTE TO USER: 
+        # The previous version randomly assigned "No Helmet" for demonstration.
+        # To actually detect a helmet, you need:
+        # 1. To crop the bounding box of the detected motorcycle/person.
+        # 2. Pass it to a secondary classifier or a custom-trained YOLOv8 model 
+        #    that has classes for 'Helmet' and 'No_Helmet'.
+        
+        # We are returning an empty list here until a real helmet model is integrated.
         return violations
 
     def recognize_license_plate(self, img, bbox):
