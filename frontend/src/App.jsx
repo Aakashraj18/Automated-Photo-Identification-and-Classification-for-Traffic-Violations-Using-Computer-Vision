@@ -1,28 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
 import { 
-  BarChart2, Activity, AlertTriangle, Clock, Share2, 
-  Map as MapIcon, History, Shield, LayoutDashboard, 
-  UploadCloud, Bot, CheckCircle2, Zap, BrainCircuit,
-  Truck, Search, RefreshCw, TriangleAlert
+  BarChart2, Activity, Clock, Map as MapIcon, History, Shield, 
+  UploadCloud, Bot, CheckCircle2, Zap, BrainCircuit, TrendingUp,
+  Truck, Search, RefreshCw, TriangleAlert, Waypoints
 } from 'lucide-react';
+
+// --- CUSTOM SVG ICONS FOR EXACT REPLICATION ---
+const TrafficLightIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="7" y="2" width="10" height="20" rx="3"></rect>
+    <circle cx="12" cy="7" r="1.5"></circle>
+    <circle cx="12" cy="12" r="1.5"></circle>
+    <circle cx="12" cy="17" r="1.5"></circle>
+  </svg>
+);
 
 const SidebarItem = ({ icon: Icon, text, active, badge, onClick }) => (
   <div 
     onClick={onClick}
-    className={`flex items-center justify-between px-4 py-3 mb-1 cursor-pointer transition-all duration-300 relative rounded-md ${
+    className={`flex items-center justify-between px-4 py-3 mb-2 cursor-pointer transition-all duration-300 rounded-lg ${
     active 
-      ? 'bg-gradient-to-r from-[#2c1d5e] to-[#101322] text-white' 
-      : 'text-[#8b95a5] hover:text-white hover:bg-[#111623]'
+      ? 'bg-[#5b36bd] text-white shadow-lg' 
+      : 'text-[#8b95a5] hover:text-white hover:bg-[#151a28]'
   }`}>
-    {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#8b5cf6] rounded-r-sm"></div>}
     <div className="flex items-center gap-3">
-      <Icon size={18} strokeWidth={2.5} />
-      <span className="font-semibold text-sm tracking-wide">{text}</span>
+      <Icon size={20} strokeWidth={2.5} />
+      <span className="font-semibold text-[15px] tracking-wide">{text}</span>
     </div>
     {badge && (
-      <span className="bg-[#e63946] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+      <span className="bg-[#e63946] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
         {badge}
       </span>
     )}
@@ -30,22 +41,29 @@ const SidebarItem = ({ icon: Icon, text, active, badge, onClick }) => (
 );
 
 const KPICard = ({ title, value, subtitle, subtitleIcon: SubIcon, icon: Icon, colorClass, iconBgClass, subtitleColorClass }) => (
-  <div className="bg-[#151a28] border border-[#1e2536] rounded-xl p-5 flex flex-col justify-center gap-1 hover:border-[#2a3449] transition-colors relative overflow-hidden">
-    <div className="flex items-start gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconBgClass}`}>
-        <Icon size={22} className={colorClass} strokeWidth={2.5} />
-      </div>
-      <div className="flex flex-col mt-1">
-        <p className="text-[#8b95a5] text-[10px] font-bold tracking-widest uppercase mb-1">{title}</p>
-        <h3 className="text-[28px] font-bold text-white leading-none mb-2">{value}</h3>
-        <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${subtitleColorClass}`}>
-          <SubIcon size={12} strokeWidth={3} />
-          {subtitle}
-        </div>
+  <div className="bg-[#111623] border border-[#1e2536] rounded-xl p-5 flex items-center gap-5 hover:border-[#2a3449] transition-colors relative overflow-hidden">
+    <div className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 ${iconBgClass}`}>
+      <Icon size={26} className={colorClass} strokeWidth={2.5} />
+    </div>
+    <div className="flex flex-col">
+      <p className="text-[#8b95a5] text-[11px] font-bold tracking-widest uppercase mb-1">{title}</p>
+      <h3 className="text-[32px] font-bold text-white leading-none mb-1">{value}</h3>
+      <div className={`flex items-center gap-1.5 text-[11px] font-bold ${subtitleColorClass}`}>
+        <SubIcon size={12} strokeWidth={3} />
+        {subtitle}
       </div>
     </div>
   </div>
 );
+
+// Map markers mimicking the screenshot exactly
+const activeHotspots = [
+  [12.9716, 77.5946], [12.9816, 77.6046], [12.9616, 77.5846], [12.9516, 77.6146], [12.9316, 77.6246]
+];
+const historicalHotspots = [
+  [12.9916, 77.5746], [12.9216, 77.5546], [12.9416, 77.6346], [12.9116, 77.5946], [12.9816, 77.6346],
+  [12.9016, 77.6146], [12.9616, 77.5546], [12.9116, 77.6446], [12.9516, 77.5646]
+];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Executive Dashboard');
@@ -94,22 +112,22 @@ export default function App() {
     <div className="min-h-screen bg-[#0b0f19] text-white flex font-sans overflow-hidden">
       
       {/* Sidebar */}
-      <div className="w-[260px] border-r border-[#1e2536] bg-[#0b0f19] flex flex-col shrink-0">
-        <div className="p-5 pt-6 mb-2">
+      <div className="w-[280px] border-r border-[#1e2536] bg-[#0a0c10] flex flex-col shrink-0">
+        <div className="p-6 mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#00e5ff] rounded-[6px] flex items-center justify-center">
-              <BarChart2 size={20} className="text-[#0b0f19]" strokeWidth={3} />
+            <div className="w-9 h-9 bg-[#00e5ff] rounded-[8px] flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.3)]">
+              <BarChart2 size={22} className="text-[#0a0c10]" strokeWidth={3} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white leading-none tracking-wide">AstraGrid</h1>
-              <p className="text-[9px] text-[#8b95a5] tracking-[0.15em] font-bold mt-1 uppercase">Traffic Control</p>
+              <h1 className="text-[22px] font-bold text-white leading-none tracking-wide">AstraGrid</h1>
+              <p className="text-[10px] text-[#8b95a5] tracking-[0.2em] font-bold mt-1 uppercase">Traffic Control</p>
             </div>
           </div>
         </div>
 
-        <div className="px-3 flex-1 mt-4">
+        <div className="px-4 flex-1 mt-4">
           <SidebarItem 
-            icon={LayoutDashboard} text="Executive Dashboard" 
+            icon={TrendingUp} text="Executive Dashboard" 
             active={activeTab === 'Executive Dashboard'} 
             onClick={() => setActiveTab('Executive Dashboard')} 
           />
@@ -123,14 +141,14 @@ export default function App() {
           <SidebarItem icon={RefreshCw} text="Post-Event Learning" active={activeTab === 'Post-Event Learning'} onClick={() => setActiveTab('Post-Event Learning')} />
         </div>
 
-        <div className="p-4 mb-2">
+        <div className="p-5 mb-2">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-[#112338] flex items-center justify-center shrink-0">
-               <Shield size={16} className="text-[#00b8ff]" />
+            <div className="w-9 h-9 rounded-full bg-[#112338] border border-[#1e2536] flex items-center justify-center shrink-0">
+               <Shield size={18} className="text-[#00b8ff]" />
             </div>
             <div>
-              <p className="text-[13px] font-bold text-white leading-tight">Dispatcher 01</p>
-              <p className="text-[10px] font-semibold text-[#8b95a5]">Bengaluru Traffic Police</p>
+              <p className="text-[14px] font-bold text-white leading-tight">Dispatcher 01</p>
+              <p className="text-[11px] font-semibold text-[#8b95a5]">Bengaluru Traffic Police</p>
             </div>
           </div>
         </div>
@@ -140,17 +158,17 @@ export default function App() {
       <div className="flex-1 flex flex-col h-screen overflow-y-auto bg-[#0b0f19]">
         
         {/* Topbar */}
-        <header className="h-[80px] border-b border-[#1e2536] flex items-center justify-between px-8 bg-[#0b0f19] shrink-0">
+        <header className="h-[88px] border-b border-[#1e2536] flex items-center justify-between px-8 bg-[#0b0f19] shrink-0">
           <div>
-            <h2 className="text-[22px] font-bold text-white tracking-wide">{activeTab}</h2>
-            <p className="text-[#8b95a5] text-[13px] font-medium mt-0.5">Real-time event forecasting and resource deployment optimizer</p>
+            <h2 className="text-[24px] font-bold text-white tracking-wide">{activeTab}</h2>
+            <p className="text-[#8b95a5] text-[14px] font-medium mt-1">Real-time event forecasting and resource deployment optimizer</p>
           </div>
-          <div className="flex items-center gap-5">
-            <div className="px-3 py-1.5 rounded-full bg-[#0d2a23] text-[#00ff88] text-[12px] font-bold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse"></span>
+          <div className="flex items-center gap-6">
+            <div className="px-4 py-1.5 rounded-full bg-[#112a20] border border-[#1a4231] text-[#00ff88] text-[13px] font-bold flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00ff88] animate-pulse"></span>
               Live Monitoring
             </div>
-            <span className="text-[#00e5ff] font-mono font-bold text-[17px] tracking-wider">
+            <span className="text-[#00e5ff] font-mono font-bold text-[18px] tracking-wider">
               {time}
             </span>
           </div>
@@ -158,28 +176,28 @@ export default function App() {
 
         {/* Dashboard Content */}
         {activeTab === 'Executive Dashboard' ? (
-          <main className="p-6 space-y-6 flex-1 flex flex-col bg-[#0b0f19]">
+          <main className="p-8 space-y-6 flex-1 flex flex-col bg-[#0b0f19]">
             
             {/* KPIs */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               <KPICard 
                 title="Total Historic Events" 
                 value="8,173" 
                 subtitle="100% anonymized" 
                 icon={TriangleAlert} 
-                subtitleIcon={Activity}
+                subtitleIcon={TrendingUp}
                 colorClass="text-[#a274ff]" 
-                iconBgClass="bg-[#21153a]"
+                iconBgClass="bg-[#241a3f]"
                 subtitleColorClass="text-[#8b95a5]"
               />
               <KPICard 
                 title="Active Congestions" 
                 value="15" 
                 subtitle="Requiring Dispatch" 
-                icon={BarChart2} 
+                icon={TrafficLightIcon} 
                 subtitleIcon={Zap}
                 colorClass="text-[#ff4b4b]" 
-                iconBgClass="bg-[#3a151b]"
+                iconBgClass="bg-[#3d1a20]"
                 subtitleColorClass="text-[#ff4b4b]"
               />
               <KPICard 
@@ -196,7 +214,7 @@ export default function App() {
                 title="Feedback Loops Logged" 
                 value="0" 
                 subtitle="Model Self-Learning" 
-                icon={Share2} 
+                icon={Waypoints} 
                 subtitleIcon={Activity}
                 colorClass="text-[#00ff88]" 
                 iconBgClass="bg-[#112a20]"
@@ -204,51 +222,73 @@ export default function App() {
               />
             </div>
 
-            {/* Map Area */}
-            <div className="bg-[#151a28] border border-[#1e2536] rounded-xl flex-1 flex flex-col min-h-[450px]">
+            {/* REAL INTERACTIVE MAP AREA */}
+            <div className="bg-[#151a28] border border-[#1e2536] rounded-2xl flex-1 flex flex-col min-h-[500px] shadow-xl overflow-hidden">
               {/* Card Header */}
-              <div className="px-5 py-4 flex items-center justify-between border-b border-[#1e2536]">
-                 <h3 className="text-[14px] font-bold text-white flex items-center gap-2">
-                   <MapIcon className="text-[#00b8ff]" size={16} strokeWidth={2.5} />
+              <div className="px-6 py-5 flex items-center justify-between border-b border-[#1e2536] bg-[#151a28] z-10">
+                 <h3 className="text-[16px] font-bold text-white flex items-center gap-3">
+                   <MapIcon className="text-[#00b8ff]" size={20} strokeWidth={2.5} />
                    Bengaluru Traffic Hotspots & Incident Map
                  </h3>
-                 <div className="flex items-center gap-5 text-[11px] font-bold text-[#8b95a5]">
-                   <div className="flex items-center gap-1.5">
-                     <div className="w-2 h-2 rounded-full bg-[#ff4b4b]"></div>
+                 <div className="flex items-center gap-6 text-[12px] font-bold text-[#8b95a5]">
+                   <div className="flex items-center gap-2">
+                     <div className="w-2.5 h-2.5 rounded-full bg-[#ff4b4b] shadow-[0_0_8px_#ff4b4b]"></div>
                      Active
                    </div>
-                   <div className="flex items-center gap-1.5">
-                     <div className="w-2 h-2 rounded-full bg-[#00b8ff]"></div>
+                   <div className="flex items-center gap-2">
+                     <div className="w-2.5 h-2.5 rounded-full bg-[#00b8ff] shadow-[0_0_8px_#00b8ff]"></div>
                      Historical Hotspots
                    </div>
                  </div>
               </div>
 
-              {/* Map Content Simulation */}
-              <div className="relative flex-1 w-full rounded-b-xl overflow-hidden bg-[#0a0c10]">
-                {/* Background image mimicking dark map */}
-                <div className="absolute inset-0 opacity-40 bg-[url('https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/12/2965/1922.png')] bg-cover bg-center mix-blend-screen"></div>
-                
-                {/* Grid Overlay */}
-                <div className="absolute inset-0 opacity-10" style={{backgroundImage: "linear-gradient(#1e2536 1px, transparent 1px), linear-gradient(90deg, #1e2536 1px, transparent 1px)", backgroundSize: "40px 40px"}}></div>
+              {/* Map Content - Actual Leaflet Map */}
+              <div className="flex-1 w-full bg-[#0b0f19] relative z-0">
+                <MapContainer 
+                  center={[12.9716, 77.5946]} 
+                  zoom={12} 
+                  zoomControl={true}
+                  style={{ height: '100%', width: '100%', backgroundColor: '#0b0f19' }}
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  />
+                  
+                  {activeHotspots.map((pos, idx) => (
+                    <CircleMarker 
+                      key={`active-${idx}`} 
+                      center={pos} 
+                      radius={7}
+                      pathOptions={{ 
+                        color: '#151a28', 
+                        weight: 2,
+                        fillColor: '#ff4b4b', 
+                        fillOpacity: 1 
+                      }} 
+                    />
+                  ))}
 
-                {/* Simulated Nodes matching the screenshot */}
-                <div className="absolute top-[35%] left-[30%] w-4 h-4 bg-[#ff4b4b] rounded-full border-[3px] border-[#151a28] shadow-[0_0_12px_#ff4b4b]"></div>
-                <div className="absolute top-[42%] left-[35%] w-4 h-4 bg-[#ff4b4b] rounded-full border-[3px] border-[#151a28] shadow-[0_0_12px_#ff4b4b]"></div>
-                <div className="absolute top-[50%] left-[28%] w-4 h-4 bg-[#ff4b4b] rounded-full border-[3px] border-[#151a28] shadow-[0_0_12px_#ff4b4b]"></div>
-                <div className="absolute top-[58%] left-[32%] w-4 h-4 bg-[#ff4b4b] rounded-full border-[3px] border-[#151a28] shadow-[0_0_12px_#ff4b4b]"></div>
-                <div className="absolute top-[75%] left-[45%] w-4 h-4 bg-[#e6a23c] rounded-full border-[3px] border-[#151a28] shadow-[0_0_12px_#e6a23c]"></div>
-                
-                {/* Historical Nodes */}
-                <div className="absolute top-[20%] left-[25%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-                <div className="absolute top-[60%] left-[22%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-                <div className="absolute top-[65%] left-[38%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-                <div className="absolute top-[80%] left-[25%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-                <div className="absolute top-[30%] left-[45%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-                <div className="absolute top-[40%] left-[48%] w-2.5 h-2.5 bg-[#00b8ff] rounded-full opacity-60"></div>
-
-                {/* City Label */}
-                <div className="absolute top-[45%] left-[25%] text-white/50 text-sm font-bold tracking-widest">Bengaluru</div>
+                  {historicalHotspots.map((pos, idx) => (
+                    <CircleMarker 
+                      key={`hist-${idx}`} 
+                      center={pos} 
+                      radius={5}
+                      pathOptions={{ 
+                        color: 'transparent',
+                        fillColor: '#00b8ff', 
+                        fillOpacity: 0.6 
+                      }} 
+                    />
+                  ))}
+                </MapContainer>
+                {/* CSS hack to add the glowing ring effect to active markers since SVG filters are tricky in Leaflet */}
+                <style>{`
+                  .leaflet-interactive { transition: all 0.2s; }
+                  path[fill="#ff4b4b"] { filter: drop-shadow(0px 0px 6px #ff4b4b); }
+                  path[fill="#00b8ff"] { filter: drop-shadow(0px 0px 4px #00b8ff); }
+                  .leaflet-container { background: #0b0f19 !important; }
+                `}</style>
               </div>
             </div>
           </main>
