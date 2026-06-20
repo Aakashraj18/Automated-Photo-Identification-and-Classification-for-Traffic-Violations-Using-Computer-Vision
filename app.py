@@ -21,15 +21,15 @@ uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png
 
 if uploaded_file is not None:
     # Save uploaded file temporarily for OpenCV processing
-    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    tfile.write(uploaded_file.read())
-    img_path = tfile.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tfile:
+        tfile.write(uploaded_file.getbuffer())
+        img_path = tfile.name
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.subheader("Original Image")
-        st.image(img_path, use_column_width=True)
+        st.image(img_path, use_container_width=True)
         
     with st.spinner('Analyzing image for violations...'):
         try:
@@ -40,7 +40,7 @@ if uploaded_file is not None:
             
             with col2:
                 st.subheader("Annotated Evidence")
-                st.image(evidence_img_rgb, use_column_width=True)
+                st.image(evidence_img_rgb, use_container_width=True)
                 
             st.subheader("Violation Report Metadata")
             st.json(report)
