@@ -124,16 +124,13 @@ export default function App() {
               Upload traffic camera feeds and instantly identify vehicles, extract license plates, and detect violations using advanced Computer Vision.
             </p>
             
-            <div className="flex items-center gap-6">
+            <div className="flex justify-center w-full">
               <button 
                 onClick={() => setAppState('dashboard')}
                 className="px-8 py-4 bg-white text-black font-bold text-lg rounded-xl hover:bg-zinc-200 hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] flex items-center gap-2"
               >
                 Launch Platform
                 <Activity size={20} />
-              </button>
-              <button className="px-8 py-4 bg-[#111] border border-[#333] text-white font-bold text-lg rounded-xl hover:bg-[#222] transition-all">
-                View GitHub
               </button>
             </div>
             
