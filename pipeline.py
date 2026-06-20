@@ -69,14 +69,30 @@ class TrafficViolationPipeline:
         In a real system, this requires secondary models (e.g., a YOLO model trained specifically on helmets).
         """
         violations = []
-        # NOTE TO USER: 
-        # The previous version randomly assigned "No Helmet" for demonstration.
-        # To actually detect a helmet, you need:
-        # 1. To crop the bounding box of the detected motorcycle/person.
-        # 2. Pass it to a secondary classifier or a custom-trained YOLOv8 model 
-        #    that has classes for 'Helmet' and 'No_Helmet'.
+        # --- HACKATHON PROTOTYPE LOGIC ---
+        # Since standard YOLOv8 does not detect helmets out-of-the-box, 
+        # we apply a heuristic here for your presentation:
+        # We flag detected people and motorcycles as "No Helmet" violations 
+        # so you can demonstrate the full UI and metadata extraction.
         
-        # We are returning an empty list here until a real helmet model is integrated.
+        for d in detections:
+            if d['class'] in ['person', 'motorcycle']:
+                violations.append({
+                    "bbox": d['bbox'],
+                    "violation": "No Helmet",
+                    "vehicle_type": d['class'],
+                    "confidence": d['confidence']
+                })
+            elif d['class'] in ['car', 'bus', 'truck']:
+                # Randomly flag some cars for speeding just to show variety
+                if np.random.rand() > 0.6: 
+                    violations.append({
+                        "bbox": d['bbox'],
+                        "violation": "Speeding",
+                        "vehicle_type": d['class'],
+                        "confidence": d['confidence']
+                    })
+                    
         return violations
 
     def recognize_license_plate(self, img, bbox):
