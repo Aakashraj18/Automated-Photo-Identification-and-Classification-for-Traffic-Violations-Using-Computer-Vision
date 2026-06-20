@@ -1,16 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-glass: rgba(30, 41, 59, 0.8);
+}
 
 @layer base {
   body {
-    @apply bg-[#0f172a] text-slate-200 antialiased;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-[#1e293b]/80 backdrop-blur-md border border-slate-700/50 shadow-xl;
+    background-color: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   }
 }
 
